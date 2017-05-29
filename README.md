@@ -1,1 +1,1 @@
-# textmaker02
+hopefully a cleaner, better version of textmaker
