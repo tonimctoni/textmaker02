@@ -203,10 +203,10 @@ public:
             (*weights_hf).add_factor_mul_at_dot_b(learning_rate, (*state_h)[time_step-1], (*delta_f)[time_step]);
             (*weights_ho).add_factor_mul_at_dot_b(learning_rate, (*state_h)[time_step-1], (*delta_o)[time_step]);
         }
-        (*bias_g).add_each_row_of_a((*delta_g)[time_step]);
-        (*bias_i).add_each_row_of_a((*delta_i)[time_step]);
-        (*bias_f).add_each_row_of_a((*delta_f)[time_step]);
-        (*bias_o).add_each_row_of_a((*delta_o)[time_step]);
+        (*bias_g).add_factor_mul_each_row_of_a(learning_rate, (*delta_g)[time_step]);
+        (*bias_i).add_factor_mul_each_row_of_a(learning_rate, (*delta_i)[time_step]);
+        (*bias_f).add_factor_mul_each_row_of_a(learning_rate, (*delta_f)[time_step]);
+        (*bias_o).add_factor_mul_each_row_of_a(learning_rate, (*delta_o)[time_step]);
     }
 };
 #endif

@@ -874,6 +874,19 @@ public:
                 (*this)[0][j]+=a[i][j];
     }
 
+    template<unsigned long A>
+    inline void add_factor_mul_each_row_of_a(const double factor, const Matrix<A, N> &a)
+    {
+        static_assert(M==1, "M is not 1");
+        for(size_t j=0;j<N;j++)
+        {
+            double sum=0.0;
+            for(size_t i=0;i<M;i++)
+                sum+=a[i][j];
+            (*this)[0][j]+=factor*sum;
+        }
+    }
+
     template<unsigned long L>//user should make sure that this!=&a and this!=&b
     inline void add_factor_mul_at_dot_b(const double factor, const Matrix<L,M>& a, const Matrix<L,N>& b) noexcept
     {

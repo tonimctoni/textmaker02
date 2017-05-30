@@ -63,7 +63,7 @@ public:
     {
         assert(time_step<time_steps);
         (*weights).add_factor_mul_at_dot_b(learning_rate, X, (*output_deltas)[time_step]);
-        (*bias).add_each_row_of_a((*output_deltas)[time_step]);
+        (*bias).add_factor_mul_each_row_of_a(learning_rate, (*output_deltas)[time_step]);
     }
 };
 #endif
