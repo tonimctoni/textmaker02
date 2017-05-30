@@ -5,7 +5,7 @@
 #ifndef __TANHLAYER__
 #define __TANHLAYER__
 template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
-class TanhLayerBase
+class SoftmaxLayerBase
 {
 private:
     std::unique_ptr<std::array<Matrix<batch_size,output_size>,time_steps>> outputs;
@@ -28,7 +28,14 @@ public:
         assert(time_step<time_steps);
         (*outputs)[time_step].equals_a_dot_b(X, *weights);
         (*outputs)[time_step].add_to_each_row(*bias);
-        (*outputs)[time_step].apply_tanh();
+        (*outputs)[time_step].apply_softmax();
+    }
+
+    inline void set_first_delta_and_propagate_with_cross_enthropy(const Matrix<batch_size,output_size> &Y, Matrix<batch_size,input_size> &X_delta, size_t time_step)
+    {
+        assert(time_step<time_steps);
+        (*output_deltas)[time_step].equals_a_sub_b(Y,(*outputs)[time_step]);
+        X_delta.equals_a_dot_bt((*output_deltas)[time_step], *weights);
     }
 
     inline void set_first_delta(const Matrix<batch_size,output_size> &Y, size_t time_step)
@@ -40,7 +47,7 @@ public:
     inline void propagate_delta(size_t time_step)
     {
         assert(time_step<time_steps);
-        (*output_deltas)[time_step].mult_after_func02((*outputs)[time_step]);
+        (*output_deltas)[time_step].mult_after_func03((*outputs)[time_step]);
     }
 
     inline void propagate_delta(Matrix<batch_size,input_size> &X_delta, size_t time_step)
@@ -59,11 +66,11 @@ public:
         return (*output_deltas)[time_step];
     }
 
-    inline void update_weights_without_optimizer(const Matrix<batch_size,input_size> &X, size_t time_step, double learning_rate)
-    {
-        assert(time_step<time_steps);
-        (*weights).add_factor_mul_at_dot_b(learning_rate, X, (*output_deltas)[time_step]);
-        (*bias).add_each_row_of_a((*output_deltas)[time_step]);
-    }
+    // inline void update_weights_without_optimizer(const Matrix<batch_size,input_size> &X, size_t time_step, double learning_rate)
+    // {
+    //     assert(time_step<time_steps);
+    //     (*weights).add_factor_mul_at_dot_b(learning_rate, X, (*output_deltas)[time_step]);
+    //     (*bias).add_each_row_of_a((*output_deltas)[time_step]);
+    // }
 };
 #endif
