@@ -2,8 +2,8 @@
 #include <memory>
 
 
-#ifndef __TANHLAYER__
-#define __TANHLAYER__
+#ifndef __SOFTMAXLAYER__
+#define __SOFTMAXLAYER__
 template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
 class SoftmaxLayerBase
 {
@@ -13,7 +13,7 @@ private:
     std::unique_ptr<Matrix<input_size, output_size>> weights;
     std::unique_ptr<Matrix<1, output_size>> bias;
 public:
-    TanhLayerBase():
+    SoftmaxLayerBase():
     outputs(new std::array<Matrix<batch_size,output_size>,time_steps>),
     output_deltas(new std::array<Matrix<batch_size,output_size>,time_steps>),
     weights(new Matrix<input_size, output_size>),
