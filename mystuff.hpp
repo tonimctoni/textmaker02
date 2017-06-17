@@ -153,6 +153,19 @@ inline void read_file_to_string(const char *filename, std::string &out_str)
     in.close();
 }
 
+inline std::string get_file_content_as_string(const char *filename)
+{
+    std::string out_str;
+    std::ifstream in(filename, std::ios::in | std::ios::binary);
+    assert(in.good());
+    in.seekg(0, std::ios::end);
+    out_str.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+    in.read(&out_str[0], out_str.size());
+    in.close();
+    return out_str;
+}
+
 inline void read_file_to_string(const char *filename, std::string &out_str, size_t max_size)
 {
     std::ifstream in(filename, std::ios::in | std::ios::binary);
