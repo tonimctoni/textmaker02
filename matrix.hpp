@@ -16,23 +16,23 @@ public:
     // /// ################################################################################################
     Matrix()=default;
 
-    // Matrix(std::initializer_list<std::initializer_list<double>> init)
-    // {
-    //     assert(init.size()==M);
+    Matrix(std::initializer_list<std::initializer_list<double>> init)
+    {
+        assert(init.size()==M);
 
-    //     int i=0;
-    //     for(auto &row:init)
-    //     {
-    //         assert(row.size()==N);
-    //         int j=0;
-    //         for(auto e:row)
-    //         {
-    //             (*this)[i][j]=e;
-    //             j++;
-    //         }
-    //         i++;
-    //     }
-    // }
+        int i=0;
+        for(auto &row:init)
+        {
+            assert(row.size()==N);
+            int j=0;
+            for(auto e:row)
+            {
+                (*this)[i][j]=e;
+                j++;
+            }
+            i++;
+        }
+    }
 
     Matrix(double s) noexcept
     {
@@ -105,18 +105,18 @@ public:
     //     return false;
     // }
 
-    // inline friend std::ostream& operator<< (std::ostream &out, const Matrix &matrix) noexcept
-    // {
-    //     for(const auto &row:matrix)
-    //     {
-    //         for(const auto &element:row)
-    //         {
-    //             out << element << ", ";
-    //         }
-    //         out << std::endl;
-    //     }
-    //     return out;
-    // }
+    inline friend std::ostream& operator<< (std::ostream &out, const Matrix &matrix) noexcept
+    {
+        for(const auto &row:matrix)
+        {
+            for(const auto &element:row)
+            {
+                out << element << ", ";
+            }
+            out << std::endl;
+        }
+        return out;
+    }
 
     // inline Matrix& operator+=(const Matrix& rhs) noexcept
     // {
@@ -881,7 +881,7 @@ public:
         for(size_t j=0;j<N;j++)
         {
             double sum=0.0;
-            for(size_t i=0;i<M;i++)
+            for(size_t i=0;i<A;i++)
                 sum+=a[i][j];
             (*this)[0][j]+=factor*sum;
         }
@@ -960,6 +960,37 @@ public:
     //     assert(not in.fail());
     // }
 };
+
+template<unsigned long input_size, unsigned long output_size, unsigned long batch_size>
+inline void update_weights_and_ms_with_rmsprop(
+    const Matrix<batch_size,input_size> &X, const Matrix<batch_size,output_size> &output_deltas,
+    Matrix<input_size,output_size> &weights, Matrix<input_size,output_size> &ms_weights,
+    const double learning_rate, const double decay) noexcept
+{
+    for(size_t i=0;i<input_size;i++)
+        for(size_t j=0;j<output_size;j++)
+        {
+            double gradient=0.0;
+            for(size_t k=0;k<batch_size;k++) gradient+=X[k][i]*output_deltas[k][j];
+            ms_weights[i][j]=ms_weights[i][j]*(decay) + gradient*gradient*(1-decay);
+            weights[i][j]+=(gradient*learning_rate)/sqrt(ms_weights[i][j]+1e-8);
+        }
+}
+
+template<unsigned long output_size, unsigned long batch_size>
+inline void update_bias_and_ms_with_rmsprop(
+    const Matrix<batch_size,output_size> &output_deltas,
+    Matrix<1,output_size> &bias, Matrix<1,output_size> &ms_bias,
+    const double learning_rate, const double decay) noexcept
+{
+    for(size_t j=0;j<output_size;j++)
+    {
+        double gradient=0.0;
+        for(size_t i=0;i<batch_size;i++) gradient+=output_deltas[i][j];
+        ms_bias[0][j]=ms_bias[0][j]*(decay) + gradient*gradient*(1-decay);
+        bias[0][j]+=(gradient*learning_rate)/sqrt(ms_bias[0][j]+1e-8);
+    }
+}
 
 // template<unsigned long M, unsigned long N>
 // inline void update_weight_with_ms(Matrix<M,N> &weights, const Matrix<M,N> &ms, const Matrix<M,N> &gradient, const double learning_rate) noexcept
