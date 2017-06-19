@@ -6,7 +6,7 @@
 template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
 class LstmLayerBase
 {
-private:
+protected:
     static constexpr unsigned long concat_size=input_size+output_size;
     //LSTM states of inputs+h after passed through weights (synapses) and activation function applied to them.
     std::array<Matrix<batch_size,output_size>,time_steps> state_g;
@@ -211,6 +211,69 @@ public:
         bias_i.add_factor_mul_each_row_of_a(learning_rate, delta_i[time_step]);
         bias_f.add_factor_mul_each_row_of_a(learning_rate, delta_f[time_step]);
         bias_o.add_factor_mul_each_row_of_a(learning_rate, delta_o[time_step]);
+    }
+};
+
+template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
+class LstmLayerRMSProp: public LstmLayerBase<input_size, output_size, batch_size, time_steps>
+{
+private:
+    Matrix<input_size, output_size> ms_weights_xg;
+    Matrix<input_size, output_size> ms_weights_xi;
+    Matrix<input_size, output_size> ms_weights_xf;
+    Matrix<input_size, output_size> ms_weights_xo;
+    Matrix<output_size, output_size> ms_weights_hg;
+    Matrix<output_size, output_size> ms_weights_hi;
+    Matrix<output_size, output_size> ms_weights_hf;
+    Matrix<output_size, output_size> ms_weights_ho;
+    Matrix<1, output_size> ms_bias_g;
+    Matrix<1, output_size> ms_bias_i;
+    Matrix<1, output_size> ms_bias_f;
+    Matrix<1, output_size> ms_bias_o;
+public:
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::state_h;
+
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::delta_g;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::delta_i;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::delta_f;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::delta_o;
+
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_xg;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_xi;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_xf;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_xo;
+
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_hg;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_hi;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_hf;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::weights_ho;
+
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::bias_g;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::bias_i;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::bias_f;
+    using LstmLayerBase<input_size, output_size, batch_size, time_steps>::bias_o;
+    LstmLayerRMSProp()noexcept:LstmLayerBase<input_size, output_size, batch_size, time_steps>()//, ms_weights(1.0), ms_bias(1.0)
+    {
+    }
+
+    inline void update_weights_with_rmsprop(const Matrix<batch_size,input_size> &X, size_t time_step, const double learning_rate, const double decay) noexcept
+    {
+        assert(time_step<time_steps);
+        update_weights_and_ms_with_rmsprop(X, delta_g[time_step], weights_xg, ms_weights_xg, learning_rate, decay);
+        update_weights_and_ms_with_rmsprop(X, delta_i[time_step], weights_xi, ms_weights_xi, learning_rate, decay);
+        update_weights_and_ms_with_rmsprop(X, delta_f[time_step], weights_xf, ms_weights_xf, learning_rate, decay);
+        update_weights_and_ms_with_rmsprop(X, delta_o[time_step], weights_xo, ms_weights_xo, learning_rate, decay);
+        if(time_step!=0)
+        {
+            update_weights_and_ms_with_rmsprop(state_h[time_step-1], delta_g[time_step], weights_hg, ms_weights_hg, learning_rate, decay);
+            update_weights_and_ms_with_rmsprop(state_h[time_step-1], delta_i[time_step], weights_hi, ms_weights_hi, learning_rate, decay);
+            update_weights_and_ms_with_rmsprop(state_h[time_step-1], delta_f[time_step], weights_hf, ms_weights_hf, learning_rate, decay);
+            update_weights_and_ms_with_rmsprop(state_h[time_step-1], delta_o[time_step], weights_ho, ms_weights_ho, learning_rate, decay);
+        }
+        update_bias_and_ms_with_rmsprop(delta_g[time_step], bias_g, ms_bias_g, learning_rate, decay);
+        update_bias_and_ms_with_rmsprop(delta_i[time_step], bias_i, ms_bias_i, learning_rate, decay);
+        update_bias_and_ms_with_rmsprop(delta_f[time_step], bias_f, ms_bias_f, learning_rate, decay);
+        update_bias_and_ms_with_rmsprop(delta_o[time_step], bias_o, ms_bias_o, learning_rate, decay);
     }
 };
 #endif

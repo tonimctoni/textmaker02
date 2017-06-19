@@ -7,7 +7,7 @@
 template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
 class SoftmaxLayerBase
 {
-private:
+protected:
     std::array<Matrix<batch_size,output_size>,time_steps> outputs;
     std::array<Matrix<batch_size,output_size>,time_steps> output_deltas;
     Matrix<input_size, output_size> weights;
@@ -77,6 +77,28 @@ public:
         assert(time_step<time_steps);
         weights.add_factor_mul_at_dot_b(learning_rate, X, output_deltas[time_step]);
         bias.add_factor_mul_each_row_of_a(learning_rate, output_deltas[time_step]);
+    }
+};
+
+template<unsigned long input_size, unsigned long output_size, unsigned long batch_size, unsigned long time_steps>
+class SoftmaxLayerRMSProp: public SoftmaxLayerBase<input_size, output_size, batch_size, time_steps>
+{
+private:
+    Matrix<input_size, output_size> ms_weights;
+    Matrix<1, output_size> ms_bias;
+public:
+    using SoftmaxLayerBase<input_size, output_size, batch_size, time_steps>::output_deltas;
+    using SoftmaxLayerBase<input_size, output_size, batch_size, time_steps>::weights;
+    using SoftmaxLayerBase<input_size, output_size, batch_size, time_steps>::bias;
+    SoftmaxLayerRMSProp()noexcept:SoftmaxLayerBase<input_size, output_size, batch_size, time_steps>(), ms_weights(1.0), ms_bias(1.0)
+    {
+    }
+
+    inline void update_weights_with_rmsprop(const Matrix<batch_size,input_size> &X, size_t time_step, const double learning_rate, const double decay) noexcept
+    {
+        assert(time_step<time_steps);
+        update_weights_and_ms_with_rmsprop(X, output_deltas[time_step], weights, ms_weights, learning_rate, decay);
+        update_bias_and_ms_with_rmsprop(output_deltas[time_step], bias, ms_bias, learning_rate, decay);
     }
 };
 #endif

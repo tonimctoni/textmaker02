@@ -89,6 +89,7 @@ public:
 
     inline void update_weights_with_rmsprop(const Matrix<batch_size,input_size> &X, size_t time_step, const double learning_rate, const double decay) noexcept
     {
+        assert(time_step<time_steps);
         update_weights_and_ms_with_rmsprop(X, output_deltas[time_step], weights, ms_weights, learning_rate, decay);
         update_bias_and_ms_with_rmsprop(output_deltas[time_step], bias, ms_bias, learning_rate, decay);
     }
