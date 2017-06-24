@@ -19,6 +19,20 @@ public:
         bias.randomize_for_nn(input_size+1);
     }
 
+    void show_guts() const noexcept
+    {
+        print("SoftmaxLayer", input_size, output_size, batch_size, time_steps);
+        print("weights:");
+        print(weights);
+        print("bias");
+        print(bias);
+    }
+
+    bool has_nan() const noexcept
+    {
+        return weights.has_nan() or bias.has_nan();
+    }
+
     const Matrix<input_size, output_size>& get_weights() const noexcept {return weights;}
     const Matrix<1, output_size>& get_bias() const noexcept {return bias;}
 
@@ -34,7 +48,7 @@ public:
         assert(time_step<time_steps);
         outputs[time_step].equals_a_dot_b(X, weights);
         outputs[time_step].add_to_each_row(bias);
-        outputs[time_step].apply_softmax();
+        outputs[time_step].apply_softmax_row_wise();
     }
 
     inline void set_first_delta_and_propagate_with_cross_enthropy(const Matrix<batch_size,output_size> &Y, Matrix<batch_size,input_size> &X_delta, size_t time_step)
@@ -77,6 +91,12 @@ public:
         assert(time_step<time_steps);
         weights.add_factor_mul_at_dot_b(learning_rate, X, output_deltas[time_step]);
         bias.add_factor_mul_each_row_of_a(learning_rate, output_deltas[time_step]);
+    }
+
+    inline void normalize01() noexcept
+    {
+        weights.normalize01();
+        bias.normalize01();
     }
 };
 

@@ -49,41 +49,41 @@ public:
     //             else        (*this)[i][j]=0.0;
     // }
 
-    // Matrix(const Matrix &other_arr) noexcept
-    // {
-    //     std::cout << "()COPY ALERT !!!" << std::endl;
-    //     for(size_t i=0;i<M;i++)
-    //         for(size_t j=0;j<N;j++)
-    //             (*this)[i][j]=other_arr[i][j];
-    // }
+    Matrix(const Matrix &other_arr) noexcept
+    {
+        std::cout << "()COPY ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+    }
 
-    // inline Matrix &operator=(const Matrix &other_arr) noexcept
-    // {
-    //     std::cout << "=COPY ALERT !!!" << std::endl;
-    //     for(size_t i=0;i<M;i++)
-    //         for(size_t j=0;j<N;j++)
-    //             (*this)[i][j]=other_arr[i][j];
+    inline Matrix &operator=(const Matrix &other_arr) noexcept
+    {
+        std::cout << "=COPY ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
 
-    //     return *this;
-    // }
+        return *this;
+    }
 
-    // Matrix(Matrix &&other_arr) noexcept
-    // {
-    //     std::cout << "()MOVE ALERT !!!" << std::endl;
-    //     for(size_t i=0;i<M;i++)
-    //         for(size_t j=0;j<N;j++)
-    //             (*this)[i][j]=other_arr[i][j];
-    // }
+    Matrix(Matrix &&other_arr) noexcept
+    {
+        std::cout << "()MOVE ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+    }
 
-    // inline Matrix &operator=(Matrix &&other_arr) noexcept
-    // {
-    //     std::cout << "=MOVE ALERT !!!" << std::endl;
-    //     for(size_t i=0;i<M;i++)
-    //         for(size_t j=0;j<N;j++)
-    //             (*this)[i][j]=other_arr[i][j];
+    inline Matrix &operator=(Matrix &&other_arr) noexcept
+    {
+        std::cout << "=MOVE ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
 
-    //     return *this;
-    // }
+        return *this;
+    }
 
     // /// Operator Overload
     // /// ################################################################################################
@@ -104,6 +104,14 @@ public:
 
     //     return false;
     // }
+
+    inline bool has_nan() const noexcept
+    {
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                if(isnan((*this)[i][j])) return true;
+        return false;
+    }
 
     inline friend std::ostream& operator<< (std::ostream &out, const Matrix &matrix) noexcept
     {
@@ -626,18 +634,33 @@ public:
                 (*this)[i][j]=tanh((*this)[i][j]);
     }
 
-    inline void apply_softmax() noexcept
+    // inline void apply_softmax() noexcept
+    // {
+    //     double sum=0.0;
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             (*this)[i][j]=exp((*this)[i][j]);
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             sum+=(*this)[i][j];
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             (*this)[i][j]/=sum;
+    // }
+
+    inline void apply_softmax_row_wise() noexcept
     {
-        double sum=0.0;
         for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
-                (*this)[i][j]=exp((*this)[i][j]);
+                (*this)[i][j]=std::exp((*this)[i][j]);
         for(size_t i=0;i<M;i++)
+        {
+            double sum=0.0;
             for(size_t j=0;j<N;j++)
                 sum+=(*this)[i][j];
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
                 (*this)[i][j]/=sum;
+        }
     }
 
     // inline void apply_rectifier() noexcept
@@ -647,6 +670,23 @@ public:
     //             if(element<0) element=0;
     //             // element=element<0?0:element;
     // }
+
+    inline void normalize01() noexcept
+    {
+        double total=0.0;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                total+=(*this)[i][j]>=0?(*this)[i][j]:-(*this)[i][j];
+        if(total>M*N)
+        {
+            for(size_t i=0;i<M;i++)
+                for(size_t j=0;j<N;j++)
+                    (*this)[i][j]*=M*N;
+            for(size_t i=0;i<M;i++)
+                for(size_t j=0;j<N;j++)
+                    (*this)[i][j]/=total;
+        }
+    }
 
     inline void mult_after_func01(const Matrix &a) noexcept
     {

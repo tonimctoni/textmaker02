@@ -39,6 +39,67 @@ public:
                 (*this)[i][j]=s;
     }
 
+    Matrix(const Matrix &other_arr) noexcept
+    {
+        std::cout << "()COPY ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+    }
+
+    inline Matrix &operator=(const Matrix &other_arr) noexcept
+    {
+        std::cout << "=COPY ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+
+        return *this;
+    }
+
+    Matrix(Matrix &&other_arr) noexcept
+    {
+        std::cout << "()MOVE ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+    }
+
+    inline Matrix &operator=(Matrix &&other_arr) noexcept
+    {
+        std::cout << "=MOVE ALERT !!!" << std::endl;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                (*this)[i][j]=other_arr[i][j];
+
+        return *this;
+    }
+
+    // inline bool has_nan() const noexcept
+    // {
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             if(isnan((*this)[i][j])) return true;
+    //     return false;
+    // }
+
+    // inline bool has_inf() const noexcept
+    // {
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             if(isinf((*this)[i][j])) return true;
+    //     return false;
+    // }
+
+    // inline double max_abs() const noexcept
+    // {
+    //     double m=std::abs((*this)[0][0]);
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             if(std::abs((*this)[i][j])>m) m=std::abs((*this)[i][j]);
+    //     return m;
+    // }
+
     inline friend std::ostream& operator<< (std::ostream &out, const Matrix &matrix) noexcept
     {
         for(const auto &row:matrix)
@@ -141,19 +202,38 @@ public:
                 (*this)[i][j]=std::tanh((*this)[i][j]);
     }
 
-    inline void apply_softmax() noexcept
+    inline void apply_softmax_row_wise() noexcept
     {
-        double sum=0.0;
         #pragma omp parallel for collapse(1) default(shared)
         for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
                 (*this)[i][j]=std::exp((*this)[i][j]);
         for(size_t i=0;i<M;i++)
+        {
+            double sum=0.0;
             for(size_t j=0;j<N;j++)
                 sum+=(*this)[i][j];
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
                 (*this)[i][j]/=sum;
+        }
+    }
+
+    inline void normalize01() noexcept
+    {
+        double total=0.0;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                total+=(*this)[i][j]>=0?(*this)[i][j]:-(*this)[i][j];
+        if(total>8)
+        {
+            // print("Normalizing...");
+            for(size_t i=0;i<M;i++)
+                for(size_t j=0;j<N;j++)
+                    (*this)[i][j]*=M*N;
+            for(size_t i=0;i<M;i++)
+                for(size_t j=0;j<N;j++)
+                    (*this)[i][j]/=total;
+        }
     }
 
     inline void mult_after_func01(const Matrix &a) noexcept

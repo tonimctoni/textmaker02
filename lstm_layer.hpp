@@ -59,6 +59,51 @@ public:
         bias_o.randomize_for_nn(concat_size+1);
     }
 
+    void show_guts() const noexcept
+    {
+        print("LstmLayer", input_size, output_size, batch_size, time_steps);
+        print("weights_xg:");
+        print(weights_xg);
+        print("weights_xi:");
+        print(weights_xi);
+        print("weights_xf:");
+        print(weights_xf);
+        print("weights_xo:");
+        print(weights_xo);
+        print("weights_hg:");
+        print(weights_hg);
+        print("weights_hi:");
+        print(weights_hi);
+        print("weights_hf:");
+        print(weights_hf);
+        print("weights_ho:");
+        print(weights_ho);
+        print("bias_g:");
+        print(bias_g);
+        print("bias_i:");
+        print(bias_i);
+        print("bias_f:");
+        print(bias_f);
+        print("bias_o:");
+        print(bias_o);
+    }
+
+    bool has_nan() const noexcept
+    {
+        return weights_xg.has_nan()
+            or weights_xi.has_nan()
+            or weights_xf.has_nan()
+            or weights_xo.has_nan()
+            or weights_hg.has_nan()
+            or weights_hi.has_nan()
+            or weights_hf.has_nan()
+            or weights_ho.has_nan()
+            or bias_g.has_nan()
+            or bias_i.has_nan()
+            or bias_f.has_nan()
+            or bias_o.has_nan();
+    }
+
     const Matrix<input_size, output_size>& get_weights_xg() const noexcept {return weights_xg;}
     const Matrix<input_size, output_size>& get_weights_xi() const noexcept {return weights_xi;}
     const Matrix<input_size, output_size>& get_weights_xf() const noexcept {return weights_xf;}

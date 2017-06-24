@@ -19,6 +19,20 @@ public:
         bias.randomize_for_nn(input_size+1);
     }
 
+    void show_guts() const noexcept
+    {
+        print("TanhLayer", input_size, output_size, batch_size, time_steps);
+        print("weights:");
+        print(weights);
+        print("bias");
+        print(bias);
+    }
+
+    bool has_nan() const noexcept
+    {
+        return weights.has_nan() or bias.has_nan();
+    }
+
     const Matrix<input_size, output_size>& get_weights() const noexcept {return weights;}
     const Matrix<1, output_size>& get_bias() const noexcept {return bias;}
 
