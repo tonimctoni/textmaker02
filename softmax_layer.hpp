@@ -33,6 +33,11 @@ public:
         return weights.has_nan() or bias.has_nan();
     }
 
+    bool has_inf() const noexcept
+    {
+        return weights.has_inf() or bias.has_inf();
+    }
+
     const Matrix<input_size, output_size>& get_weights() const noexcept {return weights;}
     const Matrix<1, output_size>& get_bias() const noexcept {return bias;}
 
@@ -93,10 +98,11 @@ public:
         bias.add_factor_mul_each_row_of_a(learning_rate, output_deltas[time_step]);
     }
 
-    inline void normalize01() noexcept
+    inline double max() const noexcept
     {
-        weights.normalize01();
-        bias.normalize01();
+        auto w=weights.max();
+        auto b=bias.max();
+        return w>b?w:b;
     }
 };
 

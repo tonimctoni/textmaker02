@@ -33,6 +33,11 @@ public:
         return weights.has_nan() or bias.has_nan();
     }
 
+    bool has_inf() const noexcept
+    {
+        return weights.has_inf() or bias.has_inf();
+    }
+
     const Matrix<input_size, output_size>& get_weights() const noexcept {return weights;}
     const Matrix<1, output_size>& get_bias() const noexcept {return bias;}
 

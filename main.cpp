@@ -8,6 +8,7 @@
 #include <memory>
 #include <tuple>
 #include <chrono>
+#include <random>
 using namespace std;
 
 template<typename T>
@@ -18,12 +19,14 @@ class NeuralNetwork
 private:
     static constexpr unsigned long time_steps=250;
     static constexpr unsigned long batch_size=23;
-    static constexpr double learning_rate=0.02;
+    static constexpr double learning_rate_layer1=0.0001;
+    static constexpr double learning_rate_layer2=0.001;
+    static constexpr double learning_rate_layer3=0.0001;
     static constexpr double decay=0.9;
     #define asoiaf_filename "../asoiaf/asoiaf.txt"
     #define allowed_chars "! ')(-,.103254769;:?acbedgfihkjmlonqpsrutwvyxz"
     static constexpr unsigned long allowed_char_amount=46;
-    static constexpr unsigned long lstm_output_size=503;
+    static constexpr unsigned long lstm_output_size=200;
 
     const string index_to_char;
     unordered_map<char, size_t> char_to_index;
@@ -55,17 +58,8 @@ private:
         for(size_t time_step=0;time_step<time_steps;time_step++)
         {
             layer1.calc(Xs[time_step].get(), time_step);
-            // assert(!layer1.has_nan());
-            // assert(!layer1.get_output(time_step).has_nan());
-            // assert(!layer1.get_delta_output(time_step).has_nan());
             layer2.calc(layer1.get_output(time_step), time_step);
-            // assert(!layer2.has_nan());
-            // assert(!layer2.get_output(time_step).has_nan());
-            // assert(!layer2.get_delta_output(time_step).has_nan());
             layer3.calc(layer2.get_output(time_step), time_step);
-            // assert(!layer3.has_nan());
-            // assert(!layer3.get_output(time_step).has_nan());
-            // assert(!layer3.get_delta_output(time_step).has_nan());
         }
     }
 
@@ -74,17 +68,8 @@ private:
         for(size_t time_step=time_steps-1;;time_step--)
         {
             layer3.set_first_delta_and_propagate_with_cross_enthropy(Ys[time_step].get(), layer2.get_delta_output(time_step), time_step);
-            // assert(!layer3.has_nan());
-            // assert(!layer3.get_output(time_step).has_nan());
-            // assert(!layer3.get_delta_output(time_step).has_nan());
             layer2.propagate_delta(layer1.get_delta_output(time_step), time_step);
-            // assert(!layer2.has_nan());
-            // assert(!layer2.get_output(time_step).has_nan());
-            // assert(!layer2.get_delta_output(time_step).has_nan());
             layer1.propagate_delta(time_step);
-            // assert(!layer1.has_nan());
-            // assert(!layer1.get_output(time_step).has_nan());
-            // assert(!layer1.get_delta_output(time_step).has_nan());
             if(time_step==0) break;
         }
     }
@@ -93,23 +78,10 @@ private:
     {
         for(size_t time_step=0;time_step<time_steps;time_step++)
         {
-            // layer1.update_weights_without_optimizer(Xs[time_step].get(), time_step, learning_rate);
-            // layer2.update_weights_without_optimizer(layer1.get_output(time_step), time_step, learning_rate);
-            // layer3.update_weights_without_optimizer(layer2.get_output(time_step), time_step, learning_rate);
-            layer1.update_weights_with_rmsprop(Xs[time_step].get(), time_step, learning_rate, decay);
-            // assert(!layer1.has_nan());
-            // assert(!layer1.get_output(time_step).has_nan());
-            // assert(!layer1.get_delta_output(time_step).has_nan());
-            layer2.update_weights_with_rmsprop(layer1.get_output(time_step), time_step, learning_rate, decay);
-            // assert(!layer2.has_nan());
-            // assert(!layer2.get_output(time_step).has_nan());
-            // assert(!layer2.get_delta_output(time_step).has_nan());
-            layer3.update_weights_with_rmsprop(layer2.get_output(time_step), time_step, learning_rate, decay);
-            // assert(!layer3.has_nan());
-            // assert(!layer3.get_output(time_step).has_nan());
-            // assert(!layer3.get_delta_output(time_step).has_nan());
+            layer1.update_weights_with_rmsprop(Xs[time_step].get(), time_step, learning_rate_layer1, decay);
+            layer2.update_weights_with_rmsprop(layer1.get_output(time_step), time_step, learning_rate_layer2, decay);
+            layer3.update_weights_with_rmsprop(layer2.get_output(time_step), time_step, learning_rate_layer3, decay);
         }
-        layer3.normalize01();
     }
 public:
     NeuralNetwork():
@@ -121,13 +93,16 @@ public:
         assert(index_to_char.size()==allowed_char_amount and char_to_index.size()==allowed_char_amount);
     }
 
-    // NeuralNetwork(UninitializedNeuralNetwork _)
-    // {}
+    void print_info() const noexcept
+    {
+        print("Info:");
+        print("time_steps:", time_steps);
+        print("batch_size:", batch_size);
+        print("learning_rates:", learning_rate_layer1, learning_rate_layer2, learning_rate_layer3);
+        print("lstm_output_sizes:", lstm_output_size);
+        print();
+    }
 
-    // tuple<const TanhLayerRMSProp<allowed_char_amount, allowed_char_amount/4, batch_size, time_steps>&, 
-    // const LstmLayerRMSProp<allowed_char_amount/4, lstm_output_size, batch_size, time_steps>&,
-    // const SoftmaxLayerRMSProp<lstm_output_size, allowed_char_amount, batch_size, time_steps>&
-    // > get_layers() const
     auto get_layers() const -> decltype(tie(layer1, layer2, layer3))
     {
         return tie(layer1, layer2, layer3);
@@ -140,6 +115,53 @@ public:
         layer3.show_guts();
     }
 
+    void pre_train_layer1()
+    {
+        uniform_int_distribution<size_t> dst(0,allowed_char_amount-1);
+        unique_ptr<SoftmaxLayerRMSProp<allowed_char_amount/4, allowed_char_amount, batch_size, 1>>
+        layer2(new SoftmaxLayerRMSProp<allowed_char_amount/4, allowed_char_amount, batch_size, 1>);
+
+        unique_ptr<OneHots<batch_size,allowed_char_amount>> X(new OneHots<batch_size,allowed_char_amount>);
+        double error=1000.0;
+        for(size_t iteration=0;error>1.0e-07;iteration++)
+        {
+            for(size_t i=0;i<batch_size;i++) X->set(i,dst(gen));
+
+            layer1.calc(X->get(),0);
+            layer2->calc(layer1.get_output(0),0);
+
+            layer2->set_first_delta_and_propagate_with_cross_enthropy(X->get(), layer1.get_delta_output(0), 0);
+            layer1.propagate_delta(0);
+
+            layer1.update_weights_with_rmsprop(X->get(), 0, 0.02, decay);
+            layer2->update_weights_with_rmsprop(layer1.get_output(0), 0, 0.02, decay);
+
+            if(iteration%10000==0)
+            {
+                error=0.0;
+                for(size_t i=0;i<batch_size;i++)
+                {
+                    for(size_t j=0;j<allowed_char_amount;j++)
+                    {
+                        error+=(layer2->get_output(0)[i][j]-X->get()[i][j])*(layer2->get_output(0)[i][j]-X->get()[i][j]);
+                    }
+                }
+                error=sqrt(error);
+                print(error);
+            }
+        }
+    }
+
+    double get_error() noexcept
+    {
+        double error=0.0;
+        for(size_t time_step=0;time_step<time_steps;time_step++)
+        {
+            error+=layer3.get_delta_output(time_step).sum_of_squares();
+        }
+        return error/(batch_size*time_steps*allowed_char_amount);
+    }
+
     void iterate()
     {
         set_XY();
@@ -148,27 +170,6 @@ public:
         learn();
     }
 };
-
-// class NeuralNetwokrOutputProducer
-// {
-// private:
-//     // static constexpr unsigned long time_steps=250;
-//     // static constexpr unsigned long batch_size=100;
-//     static constexpr unsigned long allowed_char_amount=46;
-//     static constexpr unsigned long lstm_output_size=250;
-//     TanhLayerBase<allowed_char_amount, allowed_char_amount/4, 1, 1024> layer1;
-//     LstmLayerBase<allowed_char_amount/4, lstm_output_size, 1, 1024> layer2;
-//     SoftmaxLayerBase<lstm_output_size, allowed_char_amount, 1, 1024> layer3;
-// public:
-//     // template <unsigned long batch_size, unsigned long time_steps>
-//     // NeuralNetwokrOutputProducer(const NeuralNetwork &nn)
-//     NeuralNetwokrOutputProducer(tuple<TanhLayerRMSProp<46ul, 11ul, 100ul, 250ul> const&, LstmLayerRMSProp<11ul, 250ul, 100ul, 250ul> const&, SoftmaxLayerRMSProp<250ul, 46ul, 100ul, 250ul> const&> t)
-//     {
-//         layer1.set_wb(get<0>(t));
-//         layer2.set_wb(get<1>(t));
-//         layer3.set_wb(get<2>(t));
-//     }
-// };
 
 template<unsigned long A, unsigned long B, unsigned long C, unsigned long D, unsigned long E>
 void produce_output(tuple<TanhLayerRMSProp<A, B, C, D> const&, LstmLayerRMSProp<B, E, C, D> const&, SoftmaxLayerRMSProp<E, A, C, D> const&> t)
@@ -193,72 +194,14 @@ void produce_output(tuple<TanhLayerRMSProp<A, B, C, D> const&, LstmLayerRMSProp<
         layer1->calc(X.get(), time_step);
         layer2->calc(layer1->get_output(time_step), time_step);
         layer3->calc(layer2->get_output(time_step), time_step);
-        // try
-        // {
-            size_t new_char_index=get_weighted_random_index(layer3->get_output(time_step)[0]);
-            X.set(0, new_char_index);
-            cout << index_to_char[new_char_index];
-        // }
-        // catch(...)
-        // {
-        //     print("Caught");
-        //     break;
-        // }
+        size_t new_char_index=get_weighted_random_index(layer3->get_output(time_step)[0]);
+        X.set(0, new_char_index);
+        cout << index_to_char[new_char_index];
     }
     cout << "\n\n" << endl;
 }
 
-
-
-// class NeuralNetwork
-// {
-// private:
-//     static constexpr double learning_rate=0.02;
-//     static constexpr double decay=0.9;
-//     Matrix<4,2> X;
-//     TanhLayerRMSProp<2, 3, 4, 1> layer1;
-//     TanhLayerRMSProp<3, 1, 4, 1> layer2;
-//     Matrix<4,1> Y;
-
-//     void calc()
-//     {
-//         layer1.calc(X, 0);
-//         layer2.calc(layer1.get_output(0), 0);
-//     }
-
-//     void set_deltas()
-//     {
-//         layer2.set_first_delta(Y,0);
-//         layer2.propagate_delta(layer1.get_delta_output(0),0);
-//         layer1.propagate_delta(0);
-//     }
-
-//     void learn()
-//     {
-//         layer1.update_weights_with_rmsprop(X, 0, learning_rate, decay);
-//         layer2.update_weights_with_rmsprop(layer1.get_output(0), 0, learning_rate, decay);
-//     }
-// public:
-//     NeuralNetwork():X{{0,0},{0,1},{1,0},{1,1}}, layer1(), Y{{0},{1},{1},{0}}
-//     {
-//     }
-
-//     void iterate()
-//     {
-//         // set_XY();
-//         calc();
-//         set_deltas();
-//         learn();
-//     }
-
-//     void show()
-//     {
-//         calc();
-//         print(layer2.get_output(0));
-//     }
-// };
-
-double elapsed_seconds()
+double elapsed_seconds() noexcept
 {
     using namespace std::chrono;
     static auto last = steady_clock::now();
@@ -271,19 +214,25 @@ double elapsed_seconds()
 int main()
 {
     static constexpr unsigned long iterations=-1;
+    static constexpr unsigned long output_period=20;
     unique_ptr<NeuralNetwork> neural_network(new NeuralNetwork);
+    neural_network->pre_train_layer1();
     elapsed_seconds();
-    // neural_network->show_guts();
+    double error=0.0;
     for(size_t iteration=0;iteration<iterations;iteration++)
     {
-        print("Iteration", iteration, "started...");
-        neural_network->iterate();
-        // neural_network->show_guts();
-        if((iteration+1)%20==0)
+        if(iteration%output_period==0)
         {
-            print("Seconds:", elapsed_seconds());
+            print("Iteration:", iteration);
+            error/=output_period;
+            print("Error:", error);
+            error=0.0;
+            print("Seconds:", elapsed_seconds()/output_period);
             produce_output(neural_network->get_layers());
         }
+        // print("Iteration", iteration, "started...");
+        neural_network->iterate();
+        error+=neural_network->get_error();
     }
 
     return 0;

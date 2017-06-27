@@ -104,6 +104,22 @@ public:
             or bias_o.has_nan();
     }
 
+    bool has_inf() const noexcept
+    {
+        return weights_xg.has_inf()
+            or weights_xi.has_inf()
+            or weights_xf.has_inf()
+            or weights_xo.has_inf()
+            or weights_hg.has_inf()
+            or weights_hi.has_inf()
+            or weights_hf.has_inf()
+            or weights_ho.has_inf()
+            or bias_g.has_inf()
+            or bias_i.has_inf()
+            or bias_f.has_inf()
+            or bias_o.has_inf();
+    }
+
     const Matrix<input_size, output_size>& get_weights_xg() const noexcept {return weights_xg;}
     const Matrix<input_size, output_size>& get_weights_xi() const noexcept {return weights_xi;}
     const Matrix<input_size, output_size>& get_weights_xf() const noexcept {return weights_xf;}

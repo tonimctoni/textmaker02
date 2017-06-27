@@ -105,13 +105,13 @@ public:
     //     return false;
     // }
 
-    inline bool has_nan() const noexcept
-    {
-        for(size_t i=0;i<M;i++)
-            for(size_t j=0;j<N;j++)
-                if(isnan((*this)[i][j])) return true;
-        return false;
-    }
+    // inline bool has_nan() const noexcept
+    // {
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             if(isnan((*this)[i][j])) return true;
+    //     return false;
+    // }
 
     inline friend std::ostream& operator<< (std::ostream &out, const Matrix &matrix) noexcept
     {
@@ -671,22 +671,27 @@ public:
     //             // element=element<0?0:element;
     // }
 
-    inline void normalize01() noexcept
-    {
-        double total=0.0;
-        for(size_t i=0;i<M;i++)
-            for(size_t j=0;j<N;j++)
-                total+=(*this)[i][j]>=0?(*this)[i][j]:-(*this)[i][j];
-        if(total>M*N)
-        {
-            for(size_t i=0;i<M;i++)
-                for(size_t j=0;j<N;j++)
-                    (*this)[i][j]*=M*N;
-            for(size_t i=0;i<M;i++)
-                for(size_t j=0;j<N;j++)
-                    (*this)[i][j]/=total;
-        }
-    }
+    // inline void normalize01() noexcept
+    // {
+    //     double total=0.0;
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             total+=(*this)[i][j]>=0?(*this)[i][j]:-(*this)[i][j];
+    //     // static constexpr double to=8;//M*N
+    //     // if(total>to)
+    //     // {
+    //     //     // print("Normalizing...");
+    //     //     for(size_t i=0;i<M;i++)
+    //     //         for(size_t j=0;j<N;j++)
+    //     //             (*this)[i][j]*=to;
+    //     //     for(size_t i=0;i<M;i++)
+    //     //         for(size_t j=0;j<N;j++)
+    //     //             (*this)[i][j]/=total;
+    //     // }
+    //     for(size_t i=0;i<M;i++)
+    //         for(size_t j=0;j<N;j++)
+    //             (*this)[i][j]/=total;
+    // }
 
     inline void mult_after_func01(const Matrix &a) noexcept
     {
@@ -782,14 +787,14 @@ public:
     //     return sum;
     // }
 
-    // inline double sum_of_squares() noexcept
-    // {
-    //     double sum=0.0;
-    //     for(auto &row:*this)
-    //         for(auto &element:row)
-    //             sum+=element*element;
-    //     return sum;
-    // }
+    inline double sum_of_squares() noexcept
+    {
+        double sum=0.0;
+        for(size_t i=0;i<M;i++)
+            for(size_t j=0;j<N;j++)
+                sum+=(*this)[i][j]*(*this)[i][j];
+        return sum;
+    }
 
     // template<unsigned long A, unsigned long B, unsigned long C, unsigned long D>
     // inline void set_from_four(const Matrix<1, A> &a, const Matrix<1, B> &b, const Matrix<1, C> &c, const Matrix<1, D> &d) noexcept
