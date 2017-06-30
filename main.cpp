@@ -18,7 +18,11 @@ class NeuralNetwork
 {
 private:
     static constexpr unsigned long time_steps=250;
-    static constexpr unsigned long batch_size=23;
+    // static constexpr unsigned long batch_size=2;
+    // static constexpr double learning_rate_layer1=0.002/batch_size;
+    // static constexpr double learning_rate_layer2=0.02/batch_size;
+    // static constexpr double learning_rate_layer3=0.002/batch_size;
+    static constexpr unsigned long batch_size=20;
     static constexpr double learning_rate_layer1=0.0001;
     static constexpr double learning_rate_layer2=0.001;
     static constexpr double learning_rate_layer3=0.0001;
@@ -26,7 +30,7 @@ private:
     #define asoiaf_filename "../asoiaf/asoiaf.txt"
     #define allowed_chars "! ')(-,.103254769;:?acbedgfihkjmlonqpsrutwvyxz"
     static constexpr unsigned long allowed_char_amount=46;
-    static constexpr unsigned long lstm_output_size=200;
+    static constexpr unsigned long lstm_output_size=50;
 
     const string index_to_char;
     unordered_map<char, size_t> char_to_index;
@@ -213,27 +217,51 @@ double elapsed_seconds() noexcept
 
 int main()
 {
-    static constexpr unsigned long iterations=-1;
+    static constexpr unsigned long iterations=1000;
     static constexpr unsigned long output_period=20;
+    // static constexpr unsigned long revise_learning_rate_period=5;
+    static_assert(iterations%output_period==0, "iterations%output_period==0");
     unique_ptr<NeuralNetwork> neural_network(new NeuralNetwork);
+    neural_network->print_info();
     neural_network->pre_train_layer1();
     elapsed_seconds();
     double error=0.0;
+    // double max_error=0.0;
+    // double sum_error=0.0;
+    // double learning_rate_divisor=1.0;
+    auto report=[&](){
+        error/=output_period;
+        print("Error:", error);
+        error=0.0;
+        print("Seconds:", elapsed_seconds()/output_period);
+        produce_output(neural_network->get_layers());
+    };
     for(size_t iteration=0;iteration<iterations;iteration++)
     {
         if(iteration%output_period==0)
         {
-            print("Iteration:", iteration);
-            error/=output_period;
-            print("Error:", error);
-            error=0.0;
-            print("Seconds:", elapsed_seconds()/output_period);
-            produce_output(neural_network->get_layers());
+            // if(error/output_period>max_error) max_error=error;
+            // sum_error+=error;
+            // if(iteration%(output_period*revise_learning_rate_period)==0)
+            // {
+            //     double mean_error=sum_error/revise_learning_rate_period;
+            //     if(max_error-mean_error<mean_error*0.01)
+            //     {
+            //         print(max_error, mean_error);
+            //         learning_rate_divisor*=10;
+            //         print("learning_rate_divisor:", learning_rate_divisor);
+            //     }
+            //     max_error=0.0;
+            //     sum_error=0.0;
+            // }
+            report();
         }
-        // print("Iteration", iteration, "started...");
+        print("Iteration", iteration, "started...");
         neural_network->iterate();
         error+=neural_network->get_error();
     }
+    // print("learning_rate_divisor:", learning_rate_divisor);
+    report();
 
     return 0;
 }
