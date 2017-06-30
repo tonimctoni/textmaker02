@@ -131,8 +131,8 @@ public:
     inline void equals_a_dot_b(const Matrix<M,L>& a, const Matrix<L,N>& b) noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
             {
                 double acc=0.0;
                 for(size_t k=0;k<L;k++) acc+=a[i][k]*b[k][j];
@@ -144,8 +144,8 @@ public:
     inline void equals_a_dot_bt(const Matrix<M,L>& a, const Matrix<N,L>& b) noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
             {
                 double acc=0.0;
                 for(size_t k=0;k<L;k++) acc+=a[i][k]*b[j][k];
@@ -157,8 +157,8 @@ public:
     inline void add_a_dot_b(const Matrix<M,L>& a, const Matrix<L,N>& b) noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
             {
                 double acc=0.0;
                 for(size_t k=0;k<L;k++) acc+=a[i][k]*b[k][j];
@@ -170,8 +170,8 @@ public:
     inline void add_a_dot_bt(const Matrix<M,L>& a, const Matrix<N,L>& b) noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
             {
                 double acc=0.0;
                 for(size_t k=0;k<L;k++) acc+=a[i][k]*b[j][k];
@@ -189,24 +189,24 @@ public:
     inline void apply_sigmoid() noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
                 (*this)[i][j]=1.0/(1.0+std::exp(-(*this)[i][j]));
     }
 
     inline void apply_tanh() noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
                 (*this)[i][j]=std::tanh((*this)[i][j]);
     }
 
     inline void apply_softmax_row_wise() noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
                 (*this)[i][j]=std::exp((*this)[i][j]);
         for(size_t i=0;i<M;i++)
         {
@@ -296,8 +296,8 @@ public:
     inline void add_factor_mul_at_dot_b(const double factor, const Matrix<L,M>& a, const Matrix<L,N>& b) noexcept
     {
         #pragma omp parallel for collapse(1) default(shared)
-        for(size_t i=0;i<M;i++)
             for(size_t j=0;j<N;j++)
+        for(size_t i=0;i<M;i++)
             {
                 double acc=0.0;
                 for(size_t k=0;k<L;k++) acc+=a[k][i]*b[k][j];
